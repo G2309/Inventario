@@ -1,0 +1,21 @@
+import "./globals.css";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Cardex Bioagricsa",
+  description: "Sistema de Inventario",
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="es">
+      <body className="bg-gray-50 text-gray-900 antialiased">
+        {children}
+      </body>
+    </html>
+  );
+}
