@@ -8,10 +8,28 @@ export default function LoginPage() {
   const router = useRouter();
   const [usuario, setUsuario] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState(""); 
 
-  const handleLogin = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    router.push("/dashboard/ingresos");
+    setError("");
+
+    try {
+      const res = await fetch("http://localhost:8000/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ usuario, password }),
+      });
+
+      if (res.ok) {
+        router.push("/dashboard/ingresos");
+      } else {
+        const data = await res.json();
+        setError(data.detail || "Error al iniciar sesión");
+      }
+    } catch (err) {
+      setError("No se pudo conectar con el servidor.");
+    }
   };
 
   return (

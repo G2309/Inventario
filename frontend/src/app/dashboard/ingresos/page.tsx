@@ -7,10 +7,30 @@ export default function IngresosPage() {
   const [fecha, setFecha] = useState(new Date().toISOString().split("T")[0]);
   const [mensajeExito, setMensajeExito] = useState("");
 
-  const handleGuardar = (e: React.FormEvent) => {
+  const handleGuardar = async (e: React.FormEvent) => {
     e.preventDefault();
-    setMensajeExito(`¡Éxito! Se han registrado ${cantidad} costales con fecha ${fecha}.`);
-    setCantidad(""); 
+    
+    try {
+      const res = await fetch("http://localhost:8000/ingresos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          cantidad: parseInt(cantidad), 
+          fecha: fecha 
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setMensajeExito(data.mensaje); 
+        setCantidad(""); 
+      } else {
+        alert("Error al registrar los costales. Revisa los datos.");
+      }
+    } catch (err) {
+      alert("Error de conexión con el servidor.");
+    }
+
     setTimeout(() => setMensajeExito(""), 4000);
   };
 
