@@ -24,7 +24,7 @@ export default function LoginPage() {
       if (res.ok) {
         const data = await res.json();
         localStorage.setItem("usuario_id", data.id); 
-        router.push("/dashboard/ingresos");
+        router.push("/dashboard");
       }
     } catch (err) {
       setError("No se pudo conectar con el servidor.");
