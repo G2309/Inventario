@@ -8,3 +8,8 @@ class LoginRequest(BaseModel):
 class IngresoRequest(BaseModel):
     cantidad: int
     fecha: date
+    usuario_id: int
+
+class RevertirRequest(BaseModel):
+    cantidad: int
+    fecha: date

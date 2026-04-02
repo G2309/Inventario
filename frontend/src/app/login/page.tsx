@@ -22,10 +22,9 @@ export default function LoginPage() {
       });
 
       if (res.ok) {
-        router.push("/dashboard/ingresos");
-      } else {
         const data = await res.json();
-        setError(data.detail || "Error al iniciar sesión");
+        localStorage.setItem("usuario_id", data.id); 
+        router.push("/dashboard/ingresos");
       }
     } catch (err) {
       setError("No se pudo conectar con el servidor.");
