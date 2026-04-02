@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from . import models
 from .database import engine, get_db
-from .routers import auth, inventario
+from .routers import auth, inventario, reportes
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -21,6 +21,7 @@ app.add_middleware(
 # routers
 app.include_router(auth.router)
 app.include_router(inventario.router)
+app.include_router(reportes.router)
 
 # insertar usuario test y recordar borrar al finalizar SP2
 @app.on_event("startup")
