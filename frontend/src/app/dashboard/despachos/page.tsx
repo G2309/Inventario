@@ -12,6 +12,7 @@ export default function DespachosPage() {
   const [agencia, setAgencia] = useState("");
 
   const [guiaRetorno, setGuiaRetorno] = useState("");
+  const [infoCaex, setInfoCaex] = useState<any>(null);
 
   const mostrarMensaje = (msg: string) => {
     setMensaje(msg);
@@ -61,6 +62,20 @@ export default function DespachosPage() {
     } catch (err) { alert("Error de conexión"); }
   };
 
+  const verificarEnCaex = async () => {
+    if (!guiaRetorno) return alert("Escribe la guía primero.");
+    setInfoCaex({ cargando: true });
+    try {
+      const res = await fetch(`http://localhost:8000/rastreo/${guiaRetorno}`);
+      const data = await res.json();
+      if (res.ok) setInfoCaex(data);
+      else { alert(data.detail); setInfoCaex(null); }
+    } catch {
+      alert("Error conectando con Cargo Expreso.");
+      setInfoCaex(null);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-5xl">
       <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center">
@@ -100,7 +115,7 @@ export default function DespachosPage() {
               <label className="block text-sm font-bold text-bio-dark mb-2">Número de Guía</label>
               <input
                 type="text" required value={guiaEnvio} onChange={(e) => setGuiaEnvio(e.target.value)}
-                placeholder="Ej. CE-987654"
+                placeholder="Ingresa No. Guía"
                 className="block w-full rounded-lg bg-bio-light p-3 text-bio-dark outline-none focus:ring-0 border-0 border-transparent shadow-inner"
               />
             </div>
@@ -108,7 +123,7 @@ export default function DespachosPage() {
               <label className="block text-sm font-bold text-bio-dark mb-2">Agencia Destino</label>
               <input
                 type="text" required value={agencia} onChange={(e) => setAgencia(e.target.value)}
-                placeholder="Ej. Quetzaltenango"
+                placeholder="Ej. Guatemala"
                 className="block w-full rounded-lg bg-bio-light p-3 text-bio-dark outline-none focus:ring-0 border-0 border-transparent shadow-inner"
               />
             </div>
@@ -129,6 +144,10 @@ export default function DespachosPage() {
           <h3 className="text-xl font-bold text-bio-dark mb-6">Retornos y Anulaciones</h3>
           <p className="text-sm text-bio-green-dark mb-6">Ingresa la guía para procesar un paquete devuelto o anular un envío mal ingresado.</p>
           
+          <div className="rounded-xl bg-white/80 backdrop-blur-sm p-8 shadow-lg border-0">
+          <h3 className="text-xl font-bold text-bio-dark mb-6">Retornos y Anulaciones</h3>
+          <p className="text-sm text-bio-green-dark mb-6">Ingresa la guía para procesar un paquete devuelto o anular un envío mal ingresado.</p>
+          
           <div className="space-y-6">
             <div>
               <label className="block text-sm font-bold text-bio-dark mb-2">Número de Guía a buscar</label>
@@ -139,6 +158,24 @@ export default function DespachosPage() {
               />
             </div>
             
+            <div className="flex gap-2">
+              <button 
+                type="button"
+                onClick={verificarEnCaex} 
+                className="rounded-lg bg-bio-dark px-4 py-2 font-bold text-white text-sm hover:bg-gray-800 transition-colors border-0">
+                Verificar en CAEX
+              </button>
+            </div>
+
+            {infoCaex && !infoCaex.cargando && (
+              <div className="rounded-lg bg-bio-light p-4 text-sm text-bio-dark border-l-4 border-bio-green">
+                <p><strong>Estado:</strong> {infoCaex.estado_general}</p>
+                <p><strong>Último mov:</strong> {infoCaex.ultimo_movimiento?.movimiento}</p>
+                <p className="text-xs text-gray-500 mt-1">{infoCaex.ultimo_movimiento?.ruta}</p>
+              </div>
+            )}
+            {infoCaex?.cargando && <p className="text-sm text-bio-green-dark">Conectando con Cargo Expreso...</p>}
+
             <div className="pt-4 space-y-4">
               <button 
                 onClick={() => procesarRetorno("devoluciones")} 
@@ -152,6 +189,7 @@ export default function DespachosPage() {
               </button>
             </div>
           </div>
+        </div>
         </div>
 
       </div>

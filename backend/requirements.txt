@@ -5,3 +5,6 @@ psycopg2-binary
 pydantic
 bcrypt
 python-multipart
+requests
+beautifulsoup4
+pycryptodome

@@ -3,7 +3,9 @@ from sqlalchemy.orm import Session
 
 from .. import models, schemas
 from ..database import get_db
+from ..caex import CaexScraper 
 
+scraper = CaexScraper()
 router = APIRouter(tags=["Movimientos de Inventario"])
 
 @router.post("/ingresos")
@@ -121,3 +123,10 @@ def anular_despacho(req: schemas.DevolucionRequest, db: Session = Depends(get_db
     db.commit()
     total_bodega = db.query(models.Costal).filter(models.Costal.estado == "En Bodega").count()
     return {"mensaje": f"Se anuló la salida de la guía {req.guia_logistica}. {cantidad_anulada} costales regresaron.", "nuevo_saldo": total_bodega}
+
+@router.get("/rastreo/{guia}")
+def rastrear_paquete_caex(guia: str):
+    resultado = scraper.rastrear(guia)
+    if "error" in resultado:
+        raise HTTPException(status_code=404, detail=resultado["error"])
+    return resultado
