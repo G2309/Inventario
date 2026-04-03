@@ -6,6 +6,9 @@ export default function ReportesPage() {
   const [datos, setDatos] = useState<any>(null);
   const [umbral, setUmbral] = useState<number>(200);
   const [cargando, setCargando] = useState(true);
+  const [fechaHistorial, setFechaHistorial] = useState(new Date().toISOString().split("T")[0]);
+  const [historial, setHistorial] = useState<any[]>([]);
+  const [cargandoHistorial, setCargandoHistorial] = useState(false);
 
   useEffect(() => {
     const umbralGuardado = localStorage.getItem("umbral_inventario");
@@ -30,6 +33,24 @@ export default function ReportesPage() {
     fetchDatos();
   }, []);
 
+  useEffect(() => {
+    const fetchHistorial = async () => {
+      setCargandoHistorial(true);
+      try {
+        const res = await fetch(`http://localhost:8000/reportes/historial?fecha=${fechaHistorial}`);
+        if (res.ok) {
+          const data = await res.json();
+          setHistorial(data);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setCargandoHistorial(false);
+      }
+    };
+    fetchHistorial();
+  }, [fechaHistorial]);
+
   const handleUmbralChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const nuevoUmbral = parseInt(e.target.value) || 0;
     setUmbral(nuevoUmbral);
@@ -46,6 +67,13 @@ export default function ReportesPage() {
 
   const inventarioBajo = datos.total_bodega <= umbral;
 
+  const handleDescargarExcel = () => {
+    const fecha = new Date(fechaHistorial);
+    const mes = fecha.getMonth() + 1; 
+    const anio = fecha.getFullYear();
+    window.open(`http://localhost:8000/reportes/exportar?mes=${mes}&anio=${anio}`);
+  };
+
   return (
     <div className="mx-auto max-w-5xl">
       <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center">
@@ -54,7 +82,6 @@ export default function ReportesPage() {
           <p className="text-bio-green-dark mt-1 font-medium">Resumen de operaciones y estado del Kardex.</p>
         </div>
 
-        {/* Configuración de Umbral */}
         <div className="mt-4 md:mt-0 flex items-center gap-3 bg-white/60 backdrop-blur-sm px-4 py-2 rounded-xl shadow-sm border-0">
           <label className="text-sm font-bold text-bio-dark">Alerta en menos de:</label>
           <input
@@ -116,6 +143,67 @@ export default function ReportesPage() {
               <span className="text-4xl font-bold text-orange-500">{datos.mes.devoluciones}</span>
             </div>
           </div>
+        </div>
+      </div>
+
+      <div className="rounded-xl bg-white/80 backdrop-blur-sm p-8 shadow-lg border-0">
+        <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+          <div>
+            <h3 className="text-xl font-bold text-bio-dark">Auditoría Diaria</h3>
+            <p className="text-sm text-bio-green-dark">Revisa cada movimiento registrado en el sistema.</p>
+          </div>
+          
+          <div className="flex gap-4 items-center w-full md:w-auto">
+            <input
+              type="date"
+              value={fechaHistorial}
+              onChange={(e) => setFechaHistorial(e.target.value)}
+              className="rounded-lg bg-bio-light p-3 text-bio-dark font-bold outline-none focus:ring-0 border-0 shadow-inner"
+            />
+            <button
+              onClick={handleDescargarExcel}
+              className="rounded-lg bg-bio-dark px-6 py-3 font-bold text-white hover:bg-gray-800 transition-colors border-0 shadow-md whitespace-nowrap"
+            >
+               Exportar Mes a Excel
+            </button>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          {cargandoHistorial ? (
+            <p className="text-center text-bio-green-dark py-8">Cargando registros...</p>
+          ) : historial.length === 0 ? (
+            <p className="text-center text-gray-500 py-8">No hubo movimientos en esta fecha.</p>
+          ) : (
+            <table className="w-full text-left text-sm text-bio-dark">
+              <thead className="bg-bio-green/10 text-bio-green-dark font-bold">
+                <tr>
+                  <th className="p-4 rounded-tl-lg">Hora</th>
+                  <th className="p-4">Tipo</th>
+                  <th className="p-4">Usuario</th>
+                  <th className="p-4 rounded-tr-lg">Guía / Referencia</th>
+                </tr>
+              </thead>
+              <tbody>
+                {historial.map((mov) => (
+                  <tr key={mov.id} className="hover:bg-white/50 transition-colors border-b border-bio-light/50 last:border-0">
+                    <td className="p-4 font-mono">{mov.hora}</td>
+                    <td className="p-4">
+                      <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                        mov.tipo === 'Ingreso' ? 'bg-bio-green/20 text-bio-green-dark' :
+                        mov.tipo === 'Despacho' ? 'bg-gray-200 text-gray-700' :
+                        'bg-orange-100 text-orange-600'
+                      }`}>
+                        {mov.tipo}
+                      </span>
+                    </td>
+                    <td className="p-4 font-semibold">{mov.usuario}</td>
+                    <td className="p-4 text-gray-600">{mov.guia}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
     </div>
