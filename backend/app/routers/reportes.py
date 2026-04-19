@@ -66,21 +66,62 @@ def obtener_historial(fecha: date, db: Session = Depends(get_db)):
     return resultado
 
 @router.get("/exportar")
-def exportar_csv(mes: int, anio: int, db: Session = Depends(get_db)):
-    movimientos = db.query(
-        models.MovimientoInventario, models.Costal, models.Usuario
-    ).join(
+def exportar_csv(mes: int, anio: int, dia: int = None, db: Session = Depends(get_db)):
+    query = db.query(models.MovimientoInventario, models.Costal, models.Usuario).join(
         models.Costal, models.MovimientoInventario.costal_id == models.Costal.id
     ).join(
         models.Usuario, models.MovimientoInventario.usuario_id == models.Usuario.id
-    ).filter(
-        extract('month', models.MovimientoInventario.fecha_movimiento) == mes,
-        extract('year', models.MovimientoInventario.fecha_movimiento) == anio
-    ).all()
+    )
+
+    if dia:
+        query = query.filter(
+            extract('day', models.MovimientoInventario.fecha_movimiento) == dia,
+            extract('month', models.MovimientoInventario.fecha_movimiento) == mes,
+            extract('year', models.MovimientoInventario.fecha_movimiento) == anio
+        )
+    else:
+        query = query.filter(
+            extract('month', models.MovimientoInventario.fecha_movimiento) == mes,
+            extract('year', models.MovimientoInventario.fecha_movimiento) == anio
+        )
+
+    movimientos = query.all()
+
+    # 3. Cálculos de métricas para el resumen ejecutivo
+    total_ingresos = sum(1 for m, c, u in movimientos if m.tipo_movimiento == "Ingreso")
+    total_despachos = sum(1 for m, c, u in movimientos if m.tipo_movimiento == "Despacho")
+    total_devoluciones = sum(1 for m, c, u in movimientos if m.tipo_movimiento == "Devolucion")
+
+    dia_pico_ingreso = "N/A"
+    if not dia:
+        pico_query = db.query(
+            func.date(models.MovimientoInventario.fecha_movimiento).label("fecha"),
+            func.count(models.MovimientoInventario.id).label("total")
+        ).filter(
+            extract('month', models.MovimientoInventario.fecha_movimiento) == mes,
+            extract('year', models.MovimientoInventario.fecha_movimiento) == anio,
+            models.MovimientoInventario.tipo_movimiento == "Ingreso"
+        ).group_by(func.date(models.MovimientoInventario.fecha_movimiento)).order_by(func.count(models.MovimientoInventario.id).desc()).first()
+        
+        if pico_query:
+            dia_pico_ingreso = f"{pico_query.fecha} ({pico_query.total} sacos)"
 
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["ID Movimiento", "Tipo", "Fecha y Hora", "Usuario", "Guia Logistica", "Estado Actual del Costal"])
+
+    writer.writerow(["--- REPORTE DE KARDEX BIOAGRICSA ---"])
+    writer.writerow(["Periodo", f"{anio}-{mes:02d}" + (f"-{dia:02d}" if dia else "")])
+    writer.writerow([])
+    writer.writerow(["RESUMEN DE TOTALES"])
+    writer.writerow(["Sacos Ingresados", total_ingresos])
+    writer.writerow(["Sacos Despachados", total_despachos])
+    writer.writerow(["Sacos Devueltos", total_devoluciones])
+    if not dia:
+        writer.writerow(["Día con más ingresos", dia_pico_ingreso])
+    
+    writer.writerow([])
+    writer.writerow(["--- DETALLE DE MOVIMIENTOS ---"])
+    writer.writerow(["ID Movimiento", "Tipo", "Fecha y Hora", "Usuario", "Guía Logística", "Estado Actual"])
 
     for mov, costal, usuario in movimientos:
         writer.writerow([
@@ -92,6 +133,7 @@ def exportar_csv(mes: int, anio: int, db: Session = Depends(get_db)):
             costal.estado
         ])
 
+    filename = f"Kardex_{anio}_{mes:02d}" + (f"_{dia:02d}" if dia else "") + ".csv"
     response = Response(content=output.getvalue(), media_type="text/csv")
-    response.headers["Content-Disposition"] = f"attachment; filename=Kardex_{anio}_{mes:02d}.csv"
+    response.headers["Content-Disposition"] = f"attachment; filename={filename}"
     return response

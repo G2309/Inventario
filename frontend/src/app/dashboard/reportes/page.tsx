@@ -9,6 +9,7 @@ export default function ReportesPage() {
   const [fechaHistorial, setFechaHistorial] = useState(new Date().toISOString().split("T")[0]);
   const [historial, setHistorial] = useState<any[]>([]);
   const [cargandoHistorial, setCargandoHistorial] = useState(false);
+  const [tipoExportacion, setTipoExportacion] = useState<'mensual' | 'diario'>('mensual');
 
   useEffect(() => {
     const umbralGuardado = localStorage.getItem("umbral_inventario");
@@ -68,27 +69,42 @@ export default function ReportesPage() {
   const inventarioBajo = datos.total_bodega <= umbral;
 
   const handleDescargarExcel = () => {
-    const fecha = new Date(fechaHistorial);
-    const mes = fecha.getMonth() + 1; 
-    const anio = fecha.getFullYear();
-    window.open(`http://localhost:8000/reportes/exportar?mes=${mes}&anio=${anio}`);
+    const [yyyy, mm, dd] = fechaHistorial.split("-");
+    const anio = parseInt(yyyy);
+    const mes = parseInt(mm);
+    const dia = parseInt(dd);
+
+    if (tipoExportacion === 'diario') {
+      window.open(`http://localhost:8000/reportes/exportar?mes=${mes}&anio=${anio}&dia=${dia}`);
+    } else {
+      window.open(`http://localhost:8000/reportes/exportar?mes=${mes}&anio=${anio}`);
+    }
   };
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="w-full px-8 lg:px-12">
       <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center">
         <div>
           <h2 className="text-3xl font-bold text-bio-dark drop-shadow-sm">Panel Gerencial</h2>
           <p className="text-bio-green-dark mt-1 font-medium">Resumen de operaciones y estado del Kardex.</p>
         </div>
 
-        <div className="mt-4 md:mt-0 flex items-center gap-3 bg-white/60 backdrop-blur-sm px-4 py-2 rounded-xl shadow-sm border-0">
+        <div className="mt-4 md:mt-0 flex items-center gap-4 bg-white/60 backdrop-blur-sm px-6 py-3 rounded-xl shadow-sm border-0">
           <label className="text-sm font-bold text-bio-dark">Alerta en menos de:</label>
+          <input
+            type="range"
+            min="0"
+            max="2000"
+            step="50"
+            value={umbral}
+            onChange={handleUmbralChange}
+            className="w-32 accent-bio-green cursor-pointer"
+          />
           <input
             type="number"
             value={umbral}
             onChange={handleUmbralChange}
-            className="w-20 rounded-lg bg-white/80 p-2 text-center text-bio-dark font-bold outline-none focus:ring-0 border-0 shadow-inner"
+            className="w-24 rounded-lg bg-white/80 p-2 text-center text-bio-dark font-bold outline-none focus:ring-0 border-0 shadow-inner"
           />
         </div>
       </div>
@@ -147,24 +163,34 @@ export default function ReportesPage() {
       </div>
 
       <div className="rounded-xl bg-white/80 backdrop-blur-sm p-8 shadow-lg border-0">
-        <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+        <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-6 gap-6">
           <div>
-            <h3 className="text-xl font-bold text-bio-dark">Auditoría Diaria</h3>
-            <p className="text-sm text-bio-green-dark">Revisa cada movimiento registrado en el sistema.</p>
+            <h3 className="text-xl font-bold text-bio-dark">Auditoría Diaria y Exportación</h3>
+            <p className="text-sm text-bio-green-dark">Revisa los movimientos en pantalla o descarga los reportes gerenciales.</p>
           </div>
           
-          <div className="flex gap-4 items-center w-full md:w-auto">
+          <div className="flex flex-wrap gap-4 items-center w-full xl:w-auto">
             <input
               type="date"
               value={fechaHistorial}
               onChange={(e) => setFechaHistorial(e.target.value)}
               className="rounded-lg bg-bio-light p-3 text-bio-dark font-bold outline-none focus:ring-0 border-0 shadow-inner"
             />
+            
+            <select
+              value={tipoExportacion}
+              onChange={(e) => setTipoExportacion(e.target.value as 'diario' | 'mensual')}
+              className="rounded-lg bg-bio-light p-3 text-bio-dark font-bold outline-none border-0 shadow-inner"
+            >
+              <option value="mensual">Reporte Mensual Completo</option>
+              <option value="diario">Reporte Solo de este Día</option>
+            </select>
+
             <button
               onClick={handleDescargarExcel}
               className="rounded-lg bg-bio-dark px-6 py-3 font-bold text-white hover:bg-gray-800 transition-colors border-0 shadow-md whitespace-nowrap"
             >
-               Exportar Mes a Excel
+              {tipoExportacion === 'mensual' ? '📥 Exportar Mes' : '📥 Exportar Día'}
             </button>
           </div>
         </div>
