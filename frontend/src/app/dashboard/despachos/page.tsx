@@ -43,6 +43,20 @@ export default function DespachosPage() {
     } catch (err) { alert("Error de conexión"); }
   };
 
+  const verificarEnCaex = async () => {
+    if (!guiaRetorno) return alert("Escribe la guía primero.");
+    setInfoCaex({ cargando: true });
+    try {
+      const res = await fetch(`http://localhost:8000/rastreo/${guiaRetorno}`);
+      const data = await res.json();
+      if (res.ok) setInfoCaex(data);
+      else { alert(data.detail); setInfoCaex(null); }
+    } catch {
+      alert("Error conectando con Cargo Expreso.");
+      setInfoCaex(null);
+    }
+  };
+
   const procesarRetorno = async (endpoint: string) => {
     if (!guiaRetorno) return alert("Ingresa el número de guía");
     const usuario_id = localStorage.getItem("usuario_id") || 1;
@@ -58,26 +72,13 @@ export default function DespachosPage() {
         mostrarMensaje(data.mensaje);
         setSaldoTotal(data.nuevo_saldo);
         setGuiaRetorno("");
+        setInfoCaex(null);
       } else alert(data.detail);
     } catch (err) { alert("Error de conexión"); }
   };
 
-  const verificarEnCaex = async () => {
-    if (!guiaRetorno) return alert("Escribe la guía primero.");
-    setInfoCaex({ cargando: true });
-    try {
-      const res = await fetch(`http://localhost:8000/rastreo/${guiaRetorno}`);
-      const data = await res.json();
-      if (res.ok) setInfoCaex(data);
-      else { alert(data.detail); setInfoCaex(null); }
-    } catch {
-      alert("Error conectando con Cargo Expreso.");
-      setInfoCaex(null);
-    }
-  };
-
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="w-full px-8 lg:px-12">
       <div className="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center">
         <div>
           <h2 className="text-3xl font-bold text-bio-dark">Gestión de Despachos</h2>
@@ -98,7 +99,7 @@ export default function DespachosPage() {
         </div>
       )}
 
-      <div className="mb-8 rounded-xl bg-white/80 backdrop-blur-sm p-6 shadow-lg border-0 w-full md:w-1/3">
+      <div className="mb-8 rounded-xl bg-white/80 backdrop-blur-sm p-6 shadow-lg border-0 w-full md:w-1/3 xl:w-1/4">
         <label className="block text-sm font-bold text-bio-dark mb-2">Fecha de Operación</label>
         <input
           type="date" required value={fecha}
@@ -107,15 +108,15 @@ export default function DespachosPage() {
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-        <div className="rounded-xl bg-white/80 backdrop-blur-sm p-8 shadow-lg border-0">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+        <div className="rounded-xl bg-white/80 backdrop-blur-sm p-8 shadow-lg border-0 h-fit">
           <h3 className="text-xl font-bold text-bio-dark mb-6">Nuevo Envío</h3>
           <form onSubmit={handleEnvio} className="space-y-6">
             <div>
               <label className="block text-sm font-bold text-bio-dark mb-2">Número de Guía</label>
               <input
                 type="text" required value={guiaEnvio} onChange={(e) => setGuiaEnvio(e.target.value)}
-                placeholder="Ingresa No. Guía"
+                placeholder="Ej. CE-987654"
                 className="block w-full rounded-lg bg-bio-light p-3 text-bio-dark outline-none focus:ring-0 border-0 border-transparent shadow-inner"
               />
             </div>
@@ -123,7 +124,7 @@ export default function DespachosPage() {
               <label className="block text-sm font-bold text-bio-dark mb-2">Agencia Destino</label>
               <input
                 type="text" required value={agencia} onChange={(e) => setAgencia(e.target.value)}
-                placeholder="Ej. Guatemala"
+                placeholder="Ej. Quetzaltenango"
                 className="block w-full rounded-lg bg-bio-light p-3 text-bio-dark outline-none focus:ring-0 border-0 border-transparent shadow-inner"
               />
             </div>
@@ -140,11 +141,7 @@ export default function DespachosPage() {
           </form>
         </div>
 
-        <div className="rounded-xl bg-white/80 backdrop-blur-sm p-8 shadow-lg border-0">
-          <h3 className="text-xl font-bold text-bio-dark mb-6">Retornos y Anulaciones</h3>
-          <p className="text-sm text-bio-green-dark mb-6">Ingresa la guía para procesar un paquete devuelto o anular un envío mal ingresado.</p>
-          
-          <div className="rounded-xl bg-white/80 backdrop-blur-sm p-8 shadow-lg border-0">
+        <div className="rounded-xl bg-white/80 backdrop-blur-sm p-8 shadow-lg border-0 h-fit">
           <h3 className="text-xl font-bold text-bio-dark mb-6">Retornos y Anulaciones</h3>
           <p className="text-sm text-bio-green-dark mb-6">Ingresa la guía para procesar un paquete devuelto o anular un envío mal ingresado.</p>
           
@@ -189,7 +186,6 @@ export default function DespachosPage() {
               </button>
             </div>
           </div>
-        </div>
         </div>
 
       </div>

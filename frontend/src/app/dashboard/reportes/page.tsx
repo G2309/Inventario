@@ -190,7 +190,7 @@ export default function ReportesPage() {
               onClick={handleDescargarExcel}
               className="rounded-lg bg-bio-dark px-6 py-3 font-bold text-white hover:bg-gray-800 transition-colors border-0 shadow-md whitespace-nowrap"
             >
-              {tipoExportacion === 'mensual' ? '📥 Exportar Mes' : '📥 Exportar Día'}
+              {tipoExportacion === 'mensual' ? ' Exportar Mes' : ' Exportar Día'}
             </button>
           </div>
         </div>

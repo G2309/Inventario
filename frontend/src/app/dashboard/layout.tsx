@@ -16,9 +16,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="min-h-screen bg-bio-light">
-      {/* Barra de Navegación Superior */}
-      <header className="bg-bio-dark px-6 py-4 shadow-md">
-        <div className="mx-auto flex max-w-7xl items-center justify-between">
+      <header className="bg-bio-dark px-8 py-4 shadow-md lg:px-12">
+        <div className="flex w-full items-center justify-between">
           
           <div className="flex items-center gap-4">
             {!esInicioDashboard && (
