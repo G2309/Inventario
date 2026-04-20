@@ -1,62 +1,57 @@
-Documentación de la Base de Datos
+# Base de datos
 
 El sistema utiliza PostgreSQL como motor de base de datos relacional, gestionado a través de SQLAlchemy como ORM. La arquitectura está diseñada para garantizar la trazabilidad individual (qué acciones realizó cada usuario, guardando los logs en una bitácora) de cada unidad de inventario.
-
-Modelo de Datos
-Tabla: usuarios
-
-Almacena la información de las personas que acceden al sistema.
-
-    id (Integer, PK): Identificador único.
-
-    nombre (String): Nombre de usuario para el acceso.
-
-    password_hash (String): Contraseña encriptada mediante Bcrypt.
-
-    rol (String): Define los permisos (Gerente o Encargado de Bodega).
-
-Tabla: costales
-
-Representa la unidad mínima de inventario.
-
-    id (Integer, PK): Identificador único (corresponde al ID interno).
-
-    fecha_descarga (Date): Fecha de ingreso físico a la bodega.
-
-    estado (String): Estado actual (En Bodega, Enviado).
-
-    guia_logistica (String, Nullable): Número de guía de Cargo Expreso.
-
-    agencia_ubicacion (String, Nullable): Municipio o agencia de destino.
-
-    intentos_entrega (Integer): Contador de veces que el costal ha regresado como devolución.
-
-Tabla: movimientos_inventario
-
-Registro de auditoría para cada acción realizada.
-
-    id (Integer, PK): Identificador único.
-
-    costal_id (Integer, FK): Referencia al costal afectado.
-
-    usuario_id (Integer, FK): Referencia al usuario que realizó la acción.
-
-    tipo_movimiento (String): Categoría de la acción (Ingreso, Despacho, Devolución).
-
-    fecha_movimiento (DateTime): Marca de tiempo automática.
-
-Tabla: registro_diario_consolidado
-
-Tabla de resumen para optimizar la generación de reportes.
-
-    id (Integer, PK): Identificador único.
-
-    fecha (Date, Unique): Día del registro.
-
-    ingresados_descarga (Integer): Total de ingresos en el día.
-
-    enviados (Integer): Total de salidas en el día.
-
-    devoluciones (Integer): Total de retornos en el día.
-
-    costales_disponibles (Integer): Balance neto del día.
+ 
+La conexion se configura a traves de la variable de entorno `DATABASE_URL`. SQLAlchemy crea las tablas automaticamente al iniciar la aplicacion mediante `Base.metadata.create_all()`.
+ 
+### Tablas
+ 
+#### `usuarios`
+Almacena las credenciales y el rol de cada operador del sistema.
+ 
+| Columna | Tipo | Descripcion |
+|---|---|---|
+| id | Integer PK | Identificador unico |
+| nombre | String | Nombre de usuario (unico) |
+| password_hash | String | Contrasena hasheada con bcrypt |
+| rol | String | Rol del usuario (ej. "Gerente") |
+ 
+#### `costales`
+Representa cada costal fisico en el sistema. Es la entidad central del inventario.
+ 
+| Columna | Tipo | Descripcion |
+|---|---|---|
+| id | Integer PK | Identificador unico |
+| guia_logistica | String | Numero de guia de envio asociada |
+| cantidad_asociada | Integer | Cantidad agrupada (opcional) |
+| fecha_descarga | Date | Fecha en que ingreso fisicamente |
+| agencia_ubicacion | String | Agencia de destino |
+| estado | String | Estado actual: `En Bodega`, `Enviado` |
+| intentos_entrega | Integer | Cuantas veces fue devuelto |
+| url_evidencia_visual | String | URL de foto de evidencia |
+| fecha_registro | DateTime | Timestamp de creacion del registro |
+ 
+#### `movimientos_inventario`
+Registro auditado de cada accion realizada sobre un costal.
+ 
+| Columna | Tipo | Descripcion |
+|---|---|---|
+| id | Integer PK | Identificador unico |
+| costal_id | Integer FK | Costal al que pertenece el movimiento |
+| usuario_id | Integer FK | Usuario que realizo la accion |
+| tipo_movimiento | String | `Ingreso`, `Despacho`, `Devolucion` |
+| fecha_movimiento | DateTime | Timestamp automatico del movimiento |
+ 
+#### `registro_diario_consolidado`
+Tabla de resumen por fecha. Se actualiza en cada operacion para agilizar los reportes del dashboard.
+ 
+| Columna | Tipo | Descripcion |
+|---|---|---|
+| id | Integer PK | Identificador unico |
+| fecha | Date | Fecha del registro (unica) |
+| costales_disponibles | Integer | Saldo en bodega al final del dia |
+| enviados | Integer | Total despachados en el dia |
+| devoluciones | Integer | Total devueltos en el dia |
+| ingresados_descarga | Integer | Total ingresados en el dia |
+ 
+---
