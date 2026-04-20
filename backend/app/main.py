@@ -23,7 +23,6 @@ app.include_router(auth.router)
 app.include_router(inventario.router)
 app.include_router(reportes.router)
 
-# insertar usuario test y recordar borrar al finalizar SP2
 @app.on_event("startup")
 def crear_usuario_prueba():
     db = next(get_db())
